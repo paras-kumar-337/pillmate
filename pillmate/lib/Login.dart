@@ -166,7 +166,7 @@ class _LoginFormState extends State<LoginForm> {
           ),
           SizedBox(height: 110),
           Center(
-            child: Text('Not member?', style: TextStyle(color: Colors.white, fontSize: 16))
+            child: Text('Not a member?', style: TextStyle(color: Colors.white, fontSize: 16))
           ),
           SizedBox(height: 10),
           Center(
