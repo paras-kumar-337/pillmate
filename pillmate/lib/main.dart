@@ -57,7 +57,7 @@ class SplashScreen extends StatelessWidget {
                     ),
                   SizedBox(height: 25),
                   Text(
-                    'Welcome to PillMate, User!',
+                    'Welcome to PillMate!',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
