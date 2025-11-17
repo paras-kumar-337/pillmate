@@ -124,7 +124,9 @@ class _LoginFormState extends State<LoginForm> {
       
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        MaterialPageRoute(builder: (context) => const DashboardScreen(),
+          settings: RouteSettings(name: DashboardScreen.routeName),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

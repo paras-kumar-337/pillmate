@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:pillmate/Dashboard.dart';
 import 'profile.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import '../database/db_helper.dart';
+import '../services/notification_service.dart';
+// Import dashboard to get the route name
+import 'dashboard.dart';
 
+// Medicine Model (with toIso8601String fix)
 class Medicine {
+  int? id;
   String name;
   String type;
   String strength;
-  String look; // placeholder, e.g. asset path or description
+  String? imagePath;
   String schedule;
   String dosageFrequency;
   DateTime? startDate;
@@ -16,12 +21,14 @@ class Medicine {
   DateTime? endDate;
   TimeOfDay? endTime;
   bool reminders;
+  DateTime? lastTakenDate;
 
   Medicine({
+    this.id,
     this.name = '',
     this.type = 'Tablet',
     this.strength = '500 mg',
-    this.look = '',
+    this.imagePath,
     this.schedule = 'Every day',
     this.dosageFrequency = 'Once a day',
     this.startDate,
@@ -29,10 +36,64 @@ class Medicine {
     this.endDate,
     this.endTime,
     this.reminders = true,
+    this.lastTakenDate,
   });
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'name': name,
+        'type': type,
+        'strength': strength,
+        'imagePath': imagePath,
+        'schedule': schedule,
+        'dosageFrequency': dosageFrequency,
+        // Corrected typo
+        'startDate': startDate?.toIso8601String(),
+        'startTime': startTime != null ? '${startTime!.hour}:${startTime!.minute}' : null,
+        // Corrected typo
+        'endDate': endDate?.toIso8601String(),
+        'endTime': endTime != null ? '${endTime!.hour}:${endTime!.minute}' : null,
+        'reminders': reminders ? 1 : 0,
+        'lastTakenDate': lastTakenDate?.toIso8601String(),
+      };
+
+  factory Medicine.fromMap(Map<String, dynamic> m) {
+    TimeOfDay? parseTime(String? s) {
+      if (s == null) return null;
+      final parts = s.split(':');
+      if (parts.length != 2) return null;
+      final h = int.tryParse(parts[0]) ?? 0;
+      final mm = int.tryParse(parts[1]) ?? 0;
+      return TimeOfDay(hour: h, minute: mm);
+    }
+
+    return Medicine(
+      id: m['id'] as int?,
+      name: m['name'] as String? ?? '',
+      type: m['type'] as String? ?? 'Tablet',
+      strength: m['strength'] as String? ?? '500 mg',
+      imagePath: m['imagePath'] as String?,
+      schedule: m['schedule'] as String? ?? 'Every day',
+      dosageFrequency: m['dosageFrequency'] as String? ?? 'Once a day',
+      startDate: m['startDate'] != null ? DateTime.parse(m['startDate'] as String) : null,
+      startTime: parseTime(m['startTime'] as String?),
+      endDate: m['endDate'] != null ? DateTime.parse(m['endDate'] as String) : null,
+      endTime: parseTime(m['endTime'] as String?),
+      reminders: (m['reminders'] ?? 0) == 1,
+      lastTakenDate: m['lastTakenDate'] != null ? DateTime.parse(m['lastTakenDate']) : null,
+    );
+  }
 }
 
-/// ENTRY POINT WIDGET: launch this from your Dashboard FAB
+class PopularMedicine {
+  final String name;
+  final String type;
+  final String strength;
+
+  PopularMedicine({required this.name, required this.type, required this.strength});
+}
+
+/// ENTRY POINT WIDGET
 class AddMedicationStart extends StatelessWidget {
   const AddMedicationStart({super.key});
 
@@ -42,10 +103,68 @@ class AddMedicationStart extends StatelessWidget {
   }
 }
 
-/// Page 1: Search + big card + Add Custom
-class AddMedPage1 extends StatelessWidget {
+/// Page 1: (Search + Overflow Fix)
+class AddMedPage1 extends StatefulWidget {
   final Medicine medicine;
   const AddMedPage1({super.key, required this.medicine});
+
+  @override
+  State<AddMedPage1> createState() => _AddMedPage1State();
+}
+
+class _AddMedPage1State extends State<AddMedPage1> {
+  final _searchController = TextEditingController();
+  List<PopularMedicine> _filteredMeds = [];
+
+  final List<PopularMedicine> popularMeds = [
+    PopularMedicine(name: 'Paracetamol', type: 'Tablet', strength: '500 mg'),
+    PopularMedicine(name: 'Ibuprofen', type: 'Tablet', strength: '200 mg'),
+    PopularMedicine(name: 'Aspirin', type: 'Tablet', strength: '100 mg'),
+    PopularMedicine(name: 'Amoxicillin', type: 'Capsule', strength: '250 mg'),
+    PopularMedicine(name: 'Metformin', type: 'Tablet', strength: '1000 mg'),
+    PopularMedicine(name: 'Atorvastatin', type: 'Tablet', strength: '20 mg'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredMeds = popularMeds;
+    _searchController.addListener(_filterMeds);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_filterMeds);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterMeds() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredMeds = popularMeds.where((med) {
+        return med.name.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
+
+  void _onPopularMedTapped(BuildContext context, PopularMedicine popularMed) {
+    final newMedicine = Medicine(
+      name: popularMed.name,
+      type: popularMed.type,
+      strength: popularMed.strength,
+      reminders: true,
+      schedule: 'Every day',
+      dosageFrequency: 'Once a day',
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddMedPage4(medicine: newMedicine),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,28 +183,17 @@ class AddMedPage1 extends StatelessWidget {
                     "Add New Medicine",
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
-
-                  // X button
+  
                   IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      size: 28,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DashboardScreen(),
-                        ),
-                      );
-                    },
+                    icon: const Icon(Icons.close, size: 28, color: Colors.black),
+                    // --- FIX 1 (Navigation) ---
+                    onPressed: () => Navigator.popUntil(
+                        context, ModalRoute.withName(DashboardScreen.routeName)),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Search bar
+              
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
@@ -98,50 +206,83 @@ class AddMedPage1 extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
+                        controller: _searchController,
                         decoration: const InputDecoration(
                           hintText: 'Search Medicine',
                           border: InputBorder.none,
                         ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.mic, color: Colors.grey),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Voice input not implemented'),
-                          ),
-                        );
-                      },
-                    ),
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
 
-              // Big rounded card
+              const Text(
+                "Popular Medicines",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
               Expanded(
-                child: Center(
-                  child: Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    height: 320,
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 2.5,
                   ),
+                  itemCount: _filteredMeds.length,
+                  itemBuilder: (context, index) {
+                    final med = _filteredMeds[index];
+                    return GestureDetector(
+                      onTap: () => _onPopularMedTapped(context, med),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        // --- FIX 2 (Overflow) ---
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                med.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16, // Font size can be larger now
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${med.type}, ${med.strength}',
+                                style: const TextStyle(color: Colors.grey),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        // --- END OF FIX 2 ---
+                      ),
+                    );
+                  },
                 ),
               ),
-
+              
               const SizedBox(height: 14),
               Center(
                 child: TextButton(
@@ -149,7 +290,7 @@ class AddMedPage1 extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => AddMedPage2(medicine: medicine),
+                        builder: (context) => AddMedPage2(medicine: widget.medicine),
                       ),
                     );
                   },
@@ -164,7 +305,7 @@ class AddMedPage1 extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'Next',
+                    'Add Custom Medicine',
                     style: TextStyle(color: Color(0xFF007AFF)),
                   ),
                 ),
@@ -179,7 +320,7 @@ class AddMedPage1 extends StatelessWidget {
   }
 }
 
-/// Page 2: Name / Type / Strength
+/// Page 2: Keyboard Overflow Fix
 class AddMedPage2 extends StatefulWidget {
   final Medicine medicine;
   const AddMedPage2({super.key, required this.medicine});
@@ -210,6 +351,17 @@ class _AddMedPage2State extends State<AddMedPage2> {
   }
 
   void _next() {
+    // Added validation
+    if (_nameCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a medicine name.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; 
+    }
+
     widget.medicine.name = _nameCtrl.text.trim();
     widget.medicine.type = _selectedType;
     widget.medicine.strength = _selectedStrength;
@@ -229,107 +381,114 @@ class _AddMedPage2State extends State<AddMedPage2> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // --- FIX 3 (Keyboard Overflow) ---
+          // Wrapped Column in SingleChildScrollView
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                // Ensure the content can be at least as tall as the screen
+                minHeight: MediaQuery.of(context).size.height -
+                    (MediaQuery.of(context).padding.vertical + 36), // 18*2 padding
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Use this
                 children: [
-                  const Text(
-                    "Add New Medicine",
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-
-                  // X button
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      size: 28,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DashboardScreen(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Add New Medicine",
+                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 28, color: Colors.black),
+                            // --- FIX 1 (Navigation) ---
+                            onPressed: () => Navigator.popUntil(
+                                context, ModalRoute.withName(DashboardScreen.routeName)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+                      const Text(
+                        'Medicine Name',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _nameCtrl,
+                        decoration: InputDecoration(
+                          hintText: 'Paracetamol',
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => _nameCtrl.clear(),
+                          ),
                         ),
-                      );
-                    },
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Type',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: _selectedType,
+                        items: types
+                            .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _selectedType = v ?? _selectedType),
+                        decoration: const InputDecoration(border: InputBorder.none),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Strength',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: _selectedStrength,
+                        items: strengths
+                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _selectedStrength = v ?? _selectedStrength),
+                        decoration: const InputDecoration(border: InputBorder.none),
+                      ),
+                    ],
+                  ),
+                  
+                  // Replaced Spacer with Padding
+                  Padding(
+                    padding: const EdgeInsets.only(top: 24.0, bottom: 12.0),
+                    child: Center(
+                      child: TextButton(
+                        onPressed: _next,
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.grey[200],
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'Next',
+                          style: TextStyle(color: Color(0xFF007AFF)),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
-
-              const Text(
-                'Medicine Name',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _nameCtrl,
-                decoration: InputDecoration(
-                  hintText: 'Paracetamol',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () => _nameCtrl.clear(),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-              const Text(
-                'Type',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: _selectedType,
-                items: types
-                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                    .toList(),
-                onChanged: (v) =>
-                    setState(() => _selectedType = v ?? _selectedType),
-                decoration: const InputDecoration(border: InputBorder.none),
-              ),
-
-              const SizedBox(height: 20),
-              const Text(
-                'Strength',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: _selectedStrength,
-                items: strengths
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                    .toList(),
-                onChanged: (v) =>
-                    setState(() => _selectedStrength = v ?? _selectedStrength),
-                decoration: const InputDecoration(border: InputBorder.none),
-              ),
-
-              const Spacer(),
-              Center(
-                child: TextButton(
-                  onPressed: _next,
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 10,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'Next',
-                    style: TextStyle(color: Color(0xFF007AFF)),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
+          // --- END OF FIX 3 ---
         ),
       ),
       bottomNavigationBar: _simpleBottomNav(context),
@@ -337,10 +496,28 @@ class _AddMedPage2State extends State<AddMedPage2> {
   }
 }
 
-/// Page 3: Choose look (gallery/recents)
-class AddMedPage3 extends StatelessWidget {
+/// Page 3: Removed 'Choose Recents'
+class AddMedPage3 extends StatefulWidget {
   final Medicine medicine;
   const AddMedPage3({super.key, required this.medicine});
+
+  @override
+  State<AddMedPage3> createState() => _AddMedPage3State();
+}
+
+class _AddMedPage3State extends State<AddMedPage3> {
+  final ImagePicker _picker = ImagePicker();
+  File? _imageFile;
+
+  Future<void> _pickImage() async {
+    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+        widget.medicine.imagePath = pickedFile.path;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -356,28 +533,17 @@ class AddMedPage3 extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    medicine.name.isEmpty ? 'Medicine' : medicine.name,
+                    widget.medicine.name.isEmpty ? 'Medicine' : widget.medicine.name,
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  // X button
                   IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      size: 28,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DashboardScreen(),
-                        ),
-                      );
-                    },
+                    icon: const Icon(Icons.close, size: 28, color: Colors.black),
+                    // --- FIX 1 (Navigation) ---
+                    onPressed: () => Navigator.popUntil(
+                        context, ModalRoute.withName(DashboardScreen.routeName)),
                   ),
                 ],
               ),
@@ -387,7 +553,6 @@ class AddMedPage3 extends StatelessWidget {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 30),
-
               Center(
                 child: Container(
                   height: 120,
@@ -402,45 +567,34 @@ class AddMedPage3 extends StatelessWidget {
                         offset: const Offset(0, 8),
                       ),
                     ],
+                    image: _imageFile != null
+                        ? DecorationImage(
+                            image: FileImage(_imageFile!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
+                  child: _imageFile == null
+                      ? const Icon(Icons.medication_liquid, size: 60, color: Colors.grey)
+                      : null,
                 ),
               ),
-
               const SizedBox(height: 28),
               Center(
                 child: Column(
                   children: [
                     TextButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Gallery chooser not implemented'),
-                          ),
-                        );
-                      },
+                      onPressed: _pickImage,
                       child: const Text(
                         'Choose from Gallery',
                         style: TextStyle(color: Color(0xFF007AFF)),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Recents chooser not implemented'),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Choose Recents',
-                        style: TextStyle(color: Color(0xFF007AFF)),
-                      ),
-                    ),
+                    // --- FIX 4 (Removed Button) ---
+                    // 'Choose Recents' button removed
                   ],
                 ),
               ),
-
               const Spacer(),
               Center(
                 child: TextButton(
@@ -448,7 +602,7 @@ class AddMedPage3 extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => AddMedPage4(medicine: medicine),
+                        builder: (context) => AddMedPage4(medicine: widget.medicine),
                       ),
                     );
                   },
@@ -477,7 +631,7 @@ class AddMedPage3 extends StatelessWidget {
   }
 }
 
-/// Page 4: Schedule, dosage, date/time, reminders
+/// Page 4: (Navigation Fix)
 class AddMedPage4 extends StatefulWidget {
   final Medicine medicine;
   const AddMedPage4({super.key, required this.medicine});
@@ -508,16 +662,18 @@ class _AddMedPage4State extends State<AddMedPage4> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (d != null) {
-      final TimeOfDay? t = await showTimePicker(
-        context: context,
-        initialTime: widget.medicine.startTime ?? TimeOfDay.now(),
-      );
-      setState(() {
-        widget.medicine.startDate = d;
-        widget.medicine.startTime = t;
-      });
-    }
+    if (d == null) return;
+    
+    final TimeOfDay? t = await showTimePicker(
+      context: context,
+      initialTime: widget.medicine.startTime ?? TimeOfDay.now(),
+    );
+    if (t == null) return;
+    
+    setState(() {
+      widget.medicine.startDate = d;
+      widget.medicine.startTime = t;
+    });
   }
 
   Future<void> _pickEndDate() async {
@@ -528,22 +684,35 @@ class _AddMedPage4State extends State<AddMedPage4> {
       firstDate: today,
       lastDate: DateTime(2100),
     );
-    if (d != null) {
-      final TimeOfDay? t = await showTimePicker(
-        context: context,
-        initialTime: widget.medicine.endTime ?? TimeOfDay.now(),
-      );
-      setState(() {
-        widget.medicine.endDate = d;
-        widget.medicine.endTime = t;
-      });
-    }
+    if (d == null) return;
+
+    final TimeOfDay? t = await showTimePicker(
+      context: context,
+      initialTime: widget.medicine.endTime ?? TimeOfDay.now(),
+    );
+    if (t == null) return;
+    
+    setState(() {
+      widget.medicine.endDate = d;
+      widget.medicine.endTime = t;
+    });
   }
 
   void _next() {
     widget.medicine.schedule = _schedule;
     widget.medicine.dosageFrequency = _dosage;
     widget.medicine.reminders = _reminders;
+
+    if (_reminders && widget.medicine.startTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please set a Start time for the reminder.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -588,14 +757,9 @@ class _AddMedPage4State extends State<AddMedPage4> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, size: 28, color: Colors.black),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DashboardScreen(),
-                        ),
-                      );
-                    },
+                    // --- FIX 1 (Navigation) ---
+                    onPressed: () => Navigator.popUntil(
+                        context, ModalRoute.withName(DashboardScreen.routeName)),
                   ),
                 ],
               ),
@@ -726,10 +890,40 @@ class _AddMedPage4State extends State<AddMedPage4> {
   }
 }
 
-/// Page 5: Review & Save
-class AddMedPage5 extends StatelessWidget {
+/// Page 5: (Navigation Fix)
+class AddMedPage5 extends StatefulWidget {
   final Medicine medicine;
   const AddMedPage5({super.key, required this.medicine});
+
+  @override
+  State<AddMedPage5> createState() => _AddMedPage5State();
+}
+
+class _AddMedPage5State extends State<AddMedPage5> {
+  final DBHelper _db = DBHelper();
+  final NotificationService _notificationService = NotificationService();
+  bool _isLoading = false;
+
+  Future<void> _saveMedicine() async {
+    setState(() => _isLoading = true);
+    
+    final newId = await _db.insertMedicine(widget.medicine.toMap());
+
+    if (widget.medicine.reminders) {
+      await _notificationService.scheduleMedicineReminder(widget.medicine, newId);
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Medicine saved'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    // --- FIX 1 (Navigation) ---
+    Navigator.popUntil(
+        context, ModalRoute.withName(DashboardScreen.routeName));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -748,22 +942,11 @@ class AddMedPage5 extends StatelessWidget {
                     "Review & Save",
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
-
-                  // X button
                   IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      size: 28,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DashboardScreen(),
-                        ),
-                      );
-                    },
+                    icon: const Icon(Icons.close, size: 28, color: Colors.black),
+                    // --- FIX 1 (Navigation) ---
+                    onPressed: () => Navigator.popUntil(
+                        context, ModalRoute.withName(DashboardScreen.routeName)),
                   ),
                 ],
               ),
@@ -784,12 +967,22 @@ class AddMedPage5 extends StatelessWidget {
                             offset: const Offset(0, 8),
                           ),
                         ],
+                        image: widget.medicine.imagePath != null
+                            ? DecorationImage(
+                                image: FileImage(File(widget.medicine.imagePath!)),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
+                      child: widget.medicine.imagePath == null
+                          ? const Icon(Icons.medication_liquid, size: 40, color: Colors.grey)
+                          : null,
                     ),
                     const SizedBox(height: 18),
                     Container(
                       width: double.infinity,
                       height: 320,
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(22),
@@ -801,20 +994,20 @@ class AddMedPage5 extends StatelessWidget {
                           ),
                         ],
                       ),
+                      child: ListView(
+                        children: [
+                          _reviewTile('Name:', widget.medicine.name),
+                          _reviewTile('Type:', widget.medicine.type),
+                          _reviewTile('Strength:', widget.medicine.strength),
+                          _reviewTile('Schedule:', widget.medicine.schedule),
+                          _reviewTile('Dosage:', widget.medicine.dosageFrequency),
+                          _reviewTile('Reminders:', widget.medicine.reminders ? 'On' : 'Off'),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 18),
                     ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Medicine saved')),
-                        );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const DashboardScreen(),
-                          ),
-                        );
-                      },
+                      onPressed: _isLoading ? null : _saveMedicine,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF007AFF),
                         foregroundColor: Colors.white,
@@ -826,7 +1019,16 @@ class AddMedPage5 extends StatelessWidget {
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                      child: const Text('Save'),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text('Save'),
                     ),
                   ],
                 ),
@@ -838,9 +1040,28 @@ class AddMedPage5 extends StatelessWidget {
       bottomNavigationBar: _simpleBottomNav(context),
     );
   }
+
+  Widget _reviewTile(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-/// Common bottom nav used on all pages
+/// Common bottom nav (Navigation fix)
 Widget _simpleBottomNav(BuildContext context) {
   return Container(
     margin: const EdgeInsets.symmetric(horizontal: 60, vertical: 10),
@@ -856,7 +1077,9 @@ Widget _simpleBottomNav(BuildContext context) {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         GestureDetector(
-          onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
+          // --- FIX 1 (Navigation) ---
+          onTap: () => Navigator.popUntil(
+              context, ModalRoute.withName(DashboardScreen.routeName)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: const [
