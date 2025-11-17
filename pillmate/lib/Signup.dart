@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'Login.dart';
+import 'dashboard.dart';
 
 class SignupScreen extends StatelessWidget {
   const SignupScreen({super.key});
@@ -159,13 +160,12 @@ class _SignupFormState extends State<SignupForm> {
           SizedBox(height: 50),
           Center(
             child: ElevatedButton(
-              onPressed: () {
-                if (_formkey.currentState!.validate()) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Signing up...')),
-                  );
-                }
-              },
+              onPressed:  () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const DashboardPage()),
+                      );
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(
                   255,
