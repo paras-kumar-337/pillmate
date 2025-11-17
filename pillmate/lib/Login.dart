@@ -92,6 +92,7 @@ class _LoginFormState extends State<LoginForm> {
 
   bool _isObscured = true;
 
+  @override
   Widget build(BuildContext context) {
     return Form(
       key: _formkey,
@@ -150,7 +151,6 @@ class _LoginFormState extends State<LoginForm> {
                   );
                 }
               },
-              child: const Text('Log In', style: TextStyle(fontSize: 18),),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(
                   255,
@@ -162,6 +162,7 @@ class _LoginFormState extends State<LoginForm> {
                 elevation: 2,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               ),
+              child: const Text('Log In', style: TextStyle(fontSize: 18),),
             ),
           ),
           SizedBox(height: 110),
@@ -177,13 +178,13 @@ class _LoginFormState extends State<LoginForm> {
                         MaterialPageRoute(builder: (context) => const SignupScreen()),
                       );
                     },
-                    child: Text('Sign Up'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blueGrey[400]!.withOpacity(0.4),
                       foregroundColor: Colors.white,
                       elevation: 2,
                       padding: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
                     ),
+                    child: Text('Sign Up'),
                   ),
           ),
         ],

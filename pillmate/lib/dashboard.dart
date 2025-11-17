@@ -92,4 +92,47 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 10),
 
             _buildMedicineTile("Vitamin D", "9:00 AM"),
-            _buildMedicineTile("Parace_
+            _buildMedicineTile("Paracetamol", "2:00 PM"),
+            _buildMedicineTile("Cough Syrup", "9:00 PM"),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // QUICK ACTION BUTTON COMPONENT
+  Widget _buildActionCard(
+      IconData icon, String title, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          CircleAvatar(
+            backgroundColor: color,
+            radius: 28,
+            child: Icon(icon, size: 30, color: Colors.white),
+          ),
+          const SizedBox(height: 8),
+          Text(title)
+        ],
+      ),
+    );
+  }
+
+  // MEDICINE LIST TILE COMPONENT
+  Widget _buildMedicineTile(String medName, String medTime) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: const Icon(Icons.medication, color: Colors.teal),
+        title: Text(
+          medName,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text("Time: $medTime"),
+        trailing:
+            const Icon(Icons.check_circle_outline, color: Colors.grey),
+      ),
+    );
+  }
+}

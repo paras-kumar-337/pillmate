@@ -93,6 +93,7 @@ class _SignupFormState extends State<SignupForm> {
 
   bool _isObscured = true;
 
+  @override
   Widget build(BuildContext context) {
     return Form(
       key: _formkey,
@@ -192,13 +193,13 @@ class _SignupFormState extends State<SignupForm> {
                         MaterialPageRoute(builder: (context) => const LoginScreen()),
                       );
                     },
-                    child: Text('Log In'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blueGrey[400]!.withOpacity(0.4),
                       foregroundColor: Colors.white,
                       elevation: 2,
                       padding: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
                     ),
+                    child: Text('Log In'),
                   ),
           ),
         ],

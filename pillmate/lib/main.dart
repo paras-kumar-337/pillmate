@@ -72,13 +72,13 @@ class SplashScreen extends StatelessWidget {
                         MaterialPageRoute(builder: (context) => const LoginScreen()),
                       );
                     },
-                    child: Text('Log In'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromARGB(255, 0, 115, 255).withOpacity(0.8),
                       foregroundColor: Colors.white,
                       elevation: 2,
                       padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15)
                     ),
+                    child: Text('Log In'),
                   ),
                   SizedBox(height: 15),
                   ElevatedButton(
@@ -88,13 +88,13 @@ class SplashScreen extends StatelessWidget {
                         MaterialPageRoute(builder: (context) => const SignupScreen()),
                       );
                     },
-                    child: Text('Sign Up'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blueGrey[400]!.withOpacity(0.4),
                       foregroundColor: Colors.white,
                       elevation: 2,
                       padding: EdgeInsets.symmetric(horizontal: 45, vertical: 15),
                     ),
+                    child: Text('Sign Up'),
                   ),
                 ],
               ),
