@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'Login.dart';
-import 'dashboard.dart';
+import '../services/auth_service.dart';
 
 class SignupScreen extends StatelessWidget {
   const SignupScreen({super.key});
@@ -88,11 +88,49 @@ class SignupForm extends StatefulWidget {
 
 class _SignupFormState extends State<SignupForm> {
   final _formkey = GlobalKey<FormState>();
+  final AuthService _auth = AuthService();
+
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   bool _isObscured = true;
+  bool loading = false;
+
+  void _signUp() async {
+    if (!_formkey.currentState!.validate()) return;
+
+    setState(() => loading = true);
+
+    bool success = await _auth.signup(
+      nameController.text.trim(),
+      emailController.text.trim(),
+      passwordController.text.trim(),
+    );
+
+    setState(() => loading = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Sign up successful! Please log in."),
+          backgroundColor: Colors.green,
+        )
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Sign up failed! Email already exists."),
+          backgroundColor: Colors.red,
+        )
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,6 +151,7 @@ class _SignupFormState extends State<SignupForm> {
             controller: nameController,
             keyboardType: TextInputType.text,
             style: const TextStyle(color: Colors.white),
+            validator: (v) => v!.isEmpty ? "Please enter a valid name" : null,
           ),
           const SizedBox(height: 20),
           const Text(
@@ -127,6 +166,7 @@ class _SignupFormState extends State<SignupForm> {
             controller: emailController,
             keyboardType: TextInputType.emailAddress,
             style: const TextStyle(color: Colors.white),
+            validator: (v) => v!.contains("@") && v.contains(".") ? null : "Please enter a valid email",
           ),
           const SizedBox(height: 20),
           const Text(
@@ -142,6 +182,7 @@ class _SignupFormState extends State<SignupForm> {
             keyboardType: TextInputType.visiblePassword,
             obscureText: _isObscured,
             style: const TextStyle(color: Colors.white),
+            validator: (v) => v!.length >= 8 ? null : "Password must be at least 8 characters",
             decoration: InputDecoration(
               suffixIcon: IconButton(
                 icon: Icon(
@@ -160,12 +201,7 @@ class _SignupFormState extends State<SignupForm> {
           SizedBox(height: 50),
           Center(
             child: ElevatedButton(
-              onPressed:  () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-                      );
-                    },
+              onPressed: loading ? null : _signUp,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(
                   255,
@@ -177,7 +213,15 @@ class _SignupFormState extends State<SignupForm> {
                 elevation: 2,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               ),
-              child: const Text('Sign Up', style: TextStyle(fontSize: 18),)
+              child: loading ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ) : const Text('Sign Up', style: TextStyle(fontSize: 18),
+              ),
             ),
           ),
           SizedBox(height: 60),
@@ -190,7 +234,7 @@ class _SignupFormState extends State<SignupForm> {
                     onPressed:  () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
                       );
                     },
                     style: ElevatedButton.styleFrom(
