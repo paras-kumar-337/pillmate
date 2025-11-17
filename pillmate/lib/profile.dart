@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'Dashboard.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/auth_service.dart';
+import 'Login.dart';
 
 class ProfilePage extends StatefulWidget {
-  final String name;
-  final String email;
-
   const ProfilePage({
     super.key,
-    this.name = "User",
-    this.email = "example@mail.com",
   });
 
   @override
@@ -16,21 +14,54 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final AuthService _auth = AuthService();
+
+
   // Controllers for dynamic data
   late TextEditingController nameController;
   late TextEditingController emailController;
   late TextEditingController passwordController;
   late TextEditingController medicalHistoryController;
 
+  String _userName = "User";
+  String _userEmail = "Loading...";
+
   @override
   void initState() {
     super.initState();
-    nameController = TextEditingController(text: widget.name);
-    emailController = TextEditingController(text: widget.email);
+    nameController = TextEditingController();
+    emailController = TextEditingController();
     passwordController = TextEditingController();
     medicalHistoryController = TextEditingController();
+
+    _loadUserData();
   }
 
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _userName = prefs.getString("user_name") ?? "User";
+      _userEmail = prefs.getString("user_email") ?? "No Email";
+
+      nameController.text = _userName;
+      emailController.text = _userEmail;
+    });
+  }
+
+  Future<void> _logout() async {
+    await _auth.logout();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Logged Out!"),
+        backgroundColor: Colors.blueGrey, // You can use any color
+      ),
+    );
+    
+    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+  }
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +88,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     style: TextStyle(fontSize: 18, color: Colors.black87),
                   ),
                   Text(
-                    "${widget.name}!",
+                    "$_userName!",
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -81,7 +112,7 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 30),
               _updateButton(),
               const SizedBox(height: 25),
-              _deleteAccountButton(),
+              _logoutButton(),
             ],
           ),
         ),
@@ -89,10 +120,6 @@ class _ProfilePageState extends State<ProfilePage> {
       bottomNavigationBar: _bottomNav(context),
     );
   }
-
-  // ------------------------
-  // WIDGET HELPERS
-  // ------------------------
 
   static const _labelStyle = TextStyle(
     fontSize: 18,
@@ -153,14 +180,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _deleteAccountButton() {
+  Widget _logoutButton() {
     return Center(
       child: ElevatedButton(
-        onPressed: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Account Deleted")));
-        },
+        onPressed: _logout,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color.fromARGB(255, 184, 12, 0),
           foregroundColor: Colors.white,
@@ -169,7 +192,7 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(25),
           ),
         ),
-        child: const Text("Delete Account"),
+        child: const Text("Log Out"),
       ),
     );
   }

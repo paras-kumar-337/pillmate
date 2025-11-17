@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pillmate/Dashboard.dart';
 import 'profile.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class Medicine {
   String name;
