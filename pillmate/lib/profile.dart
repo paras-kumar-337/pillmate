@@ -26,6 +26,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String _userName = "User";
   String _userEmail = "Loading...";
 
+  bool _isUpdating = false;
+
   @override
   void initState() {
     super.initState();
@@ -58,8 +60,60 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: Colors.blueGrey, // You can use any color
       ),
     );
-    
+
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+  }
+
+  Future<void> _handleUpdate() async {
+    if (emailController.text != _userEmail) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Email cannot be changed."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      emailController.text = _userEmail;
+      return;
+    }
+
+    setState(() {
+      _isUpdating = true;
+    });
+
+    final newName = nameController.text.trim();
+    final newPassword = passwordController.text.trim();
+
+    bool success = await _auth.updateProfile(
+      _userEmail,
+      newName,
+      newPassword,
+    );
+
+    setState(() {
+      _isUpdating = false;
+    });
+
+    if (success){
+      setState(() {
+        _userName = newName;
+      });
+
+      passwordController.clear();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Profile Updated Successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Profile Update Failed"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
  
   @override
@@ -101,10 +155,10 @@ class _ProfilePageState extends State<ProfilePage> {
               const Text("Name", style: _labelStyle),
               _inputField(nameController),
               const SizedBox(height: 20),
-              const Text("Email", style: _labelStyle),
+              const Text("Email (Cannot be changed)", style: _labelStyle),
               _inputField(emailController),
               const SizedBox(height: 20),
-              const Text("Password", style: _labelStyle),
+              const Text("New Password", style: _labelStyle),
               _inputField(passwordController, isPassword: true),
               const SizedBox(height: 20),
               const Text("Medical History", style: _labelStyle),
@@ -164,11 +218,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _updateButton() {
     return ElevatedButton(
-      onPressed: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Profile Updated")));
-      },
+      onPressed: _isUpdating ? null : _handleUpdate,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -176,7 +226,15 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
       ),
-      child: const Text("Update"),
+      child: _isUpdating ?
+      const SizedBox(
+        height: 20,
+        width: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+        ),
+      ) 
+      : const Text("Update"),
     );
   }
 

@@ -56,4 +56,25 @@ class DBHelper {
 
     return result.isNotEmpty ? result.first : null;
   }
+
+  Future<int> updateUser(String email, String newName, String? newPassword) async {
+  final dbClient = await db;
+  
+  // Create a map of data to update
+  final data = {
+    'name': newName,
+  };
+
+  // Only add the password to the update if a new one is provided
+  if (newPassword != null && newPassword.isNotEmpty) {
+    data['password'] = newPassword;
+  }
+
+  return await dbClient.update(
+    "users",
+    data,
+    where: "email = ?",
+    whereArgs: [email],
+  );
+}
 }

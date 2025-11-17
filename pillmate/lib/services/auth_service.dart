@@ -34,4 +34,24 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }
+
+  Future<bool> updateProfile(String email, String newName, String newPassword) async {
+  try {
+    // Use the email as the key to update
+    await _dbHelper.updateUser(
+      email, 
+      newName, 
+      newPassword.isEmpty ? null : newPassword // Pass null if password string is empty
+    );
+    
+    // Re-save the name in SharedPreferences in case it changed
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("user_name", newName);
+    
+    return true;
+  } catch (e) {
+    print("Update Profile Error: $e");
+    return false;
+  }
+}
 }
