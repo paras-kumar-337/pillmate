@@ -1,137 +1,234 @@
 import 'package:flutter/material.dart';
+import 'profile.dart';
+import 'addMedication.dart';
 
-class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
+class DashboardScreen extends StatelessWidget {
+  const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text(
-          "PillMate Dashboard",
-          style: TextStyle(fontWeight: FontWeight.bold),
+      backgroundColor: const Color(0xFFF5F7FB),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _headerSection(),
+              const SizedBox(height: 25),
+
+              _dateSelector(),
+              const SizedBox(height: 30),
+
+              _sectionTitle("Taken"),
+              const SizedBox(height: 12),
+              _medicineRow(["8:00", "9:00"]),
+              const SizedBox(height: 30),
+
+              _sectionTitle("Scheduled"),
+              const SizedBox(height: 12),
+              _medicineRow(["10:00", "11:00"]),
+              const SizedBox(height: 80),
+            ],
+          ),
         ),
-        backgroundColor: Colors.teal,
       ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      floatingActionButton: SizedBox(
+        height: 65,
+        width: 65,
+        child: FloatingActionButton(
+          backgroundColor: const Color(0xFF007AFF),
+          shape: const CircleBorder(),
+          elevation: 0,
+          highlightElevation: 0,
+          focusElevation: 0,
+          hoverElevation: 0,
+          child: const Icon(Icons.add, size: 32, color: Colors.white),
+          onPressed: () {
+            Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AddMedicationStart()),
+                      );
+          },
+        ),
+      ),
+
+      bottomNavigationBar: _bottomNavBar(context),
+    );
+  }
+
+  Widget _headerSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: const [
+        Text(
+          "Your Medications",
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        SizedBox(height: 6),
+        Row(
           children: [
-
-            // TOP CARD - NEXT MEDICINE
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 3,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                width: double.infinity,
-                child: Row(
-                  children: [
-                    const Icon(Icons.alarm, size: 40, color: Colors.teal),
-                    const SizedBox(width: 15),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          "Next Medicine",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          "Paracetamol – 2:00 PM",
-                          style: TextStyle(fontSize: 15),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            Text(
+              "Welcome, ",
+              style: TextStyle(fontSize: 18, color: Colors.black87),
+            ),
+            Text(
+              "User!",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF007AFF),
               ),
             ),
-
-            const SizedBox(height: 25),
-
-            // QUICK ACTIONS
-            const Text(
-              "Quick Actions",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 15),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildActionCard(Icons.add_circle, "Add Medicine", Colors.teal,
-                    () {
-                  // TODO: Navigate to add medicine screen
-                }),
-
-                _buildActionCard(Icons.history, "History", Colors.blue, () {
-                  // TODO: Navigate to history screen
-                }),
-
-                _buildActionCard(Icons.list_alt, "My Medicines", Colors.orange,
-                    () {
-                  // TODO: Navigate to list screen
-                }),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            // TODAY'S MEDICINES LIST
-            const Text(
-              "Today's Medicines",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-
-            _buildMedicineTile("Vitamin D", "9:00 AM"),
-            _buildMedicineTile("Paracetamol", "2:00 PM"),
-            _buildMedicineTile("Cough Syrup", "9:00 PM"),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _dateSelector() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _dateChip("Mar 31", false),
+        const SizedBox(width: 10),
+        _dateChip("Apr 1", true),
+        const SizedBox(width: 10),
+        _dateChip("Apr 2", false),
+      ],
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    );
+  }
+
+  // Date Chip
+  Widget _dateChip(String label, bool isSelected) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFF007AFF) : Colors.grey[300],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Colors.black87,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
   }
 
-  // QUICK ACTION BUTTON COMPONENT
-  Widget _buildActionCard(
-      IconData icon, String title, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        children: [
-          CircleAvatar(
-            backgroundColor: color,
-            radius: 28,
-            child: Icon(icon, size: 30, color: Colors.white),
+  // Circle Medication Row
+  Widget _medicineRow(List<String> times) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: times.map((time) => _medicineCard(time)).toList(),
+    );
+  }
+
+  Widget _medicineCard(String time) {
+    return Column(
+      children: [
+        Container(
+          height: 90,
+          width: 90,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(45),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(title)
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(time),
+        ),
+      ],
+    );
+  }
+
+  // Bottom Navigation Bar
+  Widget _bottomNavBar(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 60, vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _navItem(
+            icon: Icons.medication_liquid,
+            label: "Medicines",
+            active: true,
+            onTap: () {},
+          ),
+          _navItem(
+            icon: Icons.person,
+            label: "Profile",
+            active: false,
+            onTap: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => const ProfilePage(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  // MEDICINE LIST TILE COMPONENT
-  Widget _buildMedicineTile(String medName, String medTime) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: const Icon(Icons.medication, color: Colors.teal),
-        title: Text(
-          medName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text("Time: $medTime"),
-        trailing:
-            const Icon(Icons.check_circle_outline, color: Colors.grey),
+  Widget _navItem({
+    required IconData icon,
+    required String label,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: active ? const Color(0xFF007AFF) : Colors.grey),
+          Text(
+            label,
+            style: TextStyle(
+              color: active ? const Color(0xFF007AFF) : Colors.grey,
+            ),
+          ),
+        ],
       ),
     );
   }

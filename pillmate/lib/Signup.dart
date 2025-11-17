@@ -163,7 +163,7 @@ class _SignupFormState extends State<SignupForm> {
               onPressed:  () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const DashboardPage()),
+                        MaterialPageRoute(builder: (context) => const DashboardScreen()),
                       );
                     },
               style: ElevatedButton.styleFrom(
