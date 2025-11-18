@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'Signup.dart';
 import 'dashboard.dart';
 import '../services/auth_service.dart';
+import 'forgot_password.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -190,18 +191,33 @@ class _LoginFormState extends State<LoginForm> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                  );
+                },
+                child: const Text(
+                  'Forgot Password?',
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
 
-          SizedBox(height: 50),
+          SizedBox(height: 34),
           Center(
             child: ElevatedButton(
               onPressed: loading ? null : _login,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(
-                  255,
-                  0,
-                  115,
-                  255,
-                ).withOpacity(0.8),
+                backgroundColor: const Color.fromARGB(255, 0, 155, 65).withOpacity(0.8),
                 foregroundColor: Colors.white,
                 elevation: 2,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
@@ -235,8 +251,8 @@ class _LoginFormState extends State<LoginForm> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey[400]!.withOpacity(0.4),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color.fromARGB(255, 227, 227, 227),
+                      foregroundColor: Color.fromARGB(255, 0, 0, 0),
                 elevation: 2,
                 padding: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
               ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'profile.dart';
 import 'addMedication.dart';
 import '../database/db_helper.dart';
-import 'addMedication.dart' show Medicine; // Import the updated model
+import 'addMedication.dart' show Medicine;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';
@@ -22,7 +22,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final NotificationService _notificationService = NotificationService();
   
   String _userName = "User";
-  // This will be set to today's date at midnight
   DateTime _selectedDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
 
   List<Medicine> _allMeds = [];
@@ -36,7 +35,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadAllData();
   }
 
-  // --- Helper function to check if two DateTimes are on the same day ---
   bool _isSameDay(DateTime? a, DateTime? b) {
     if (a == null || b == null) return false;
     return a.year == b.year && a.month == b.month && a.day == b.day;
@@ -61,7 +59,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (mounted) setState(() => _isLoading = true);
     
     final data = await _db.getMedicines();
-    // This now uses the new Medicine.fromMap with lastTakenDate
     _allMeds = data.map((item) => Medicine.fromMap(item)).toList();
     
     _filterMeds(); 
@@ -69,26 +66,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (mounted) setState(() => _isLoading = false);
   }
 
-  // --- THIS IS THE CORE LOGIC FIX ---
   void _filterMeds() {
-    // 1. Filter all meds to get only meds for the _selectedDate
     final List<Medicine> todaysMeds = _allMeds.where((med) {
       if (med.startDate == null) return false; 
 
-      // 1. Check if start date is after the selected date
       if (_selectedDate.isBefore(med.startDate!) &&
           !_isSameDay(_selectedDate, med.startDate)) {
         return false;
       }
 
-      // 2. Check if end date is before the selected date
       if (med.endDate != null &&
           _selectedDate.isAfter(med.endDate!) &&
           !_isSameDay(_selectedDate, med.endDate)) {
         return false;
       }
 
-      // 3. Check schedule
       if (med.schedule == 'Weekdays' &&
           (_selectedDate.weekday == DateTime.saturday ||
               _selectedDate.weekday == DateTime.sunday)) {
@@ -98,54 +90,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return true;
     }).toList();
 
-    // 2. Filter that list into "taken" and "scheduled"
-    // A med is "taken" *only if* its last taken date is the same as the selected date
     _takenMeds = todaysMeds.where((med) => 
         _isSameDay(med.lastTakenDate, _selectedDate)
     ).toList();
     
-    // A med is "scheduled" *only if* its last taken date is NOT the same as the selected date
     _scheduledMeds = todaysMeds.where((med) => 
         !_isSameDay(med.lastTakenDate, _selectedDate)
     ).toList();
   }
-  // --- END OF LOGIC FIX ---
 
-
-  // --- UPDATED THIS FUNCTION ---
   Future<void> _markAsTaken(Medicine med) async {
     if (med.id == null) return;
     
-    // Set the last taken date to the *selected date*
     await _db.updateMedicineLastTaken(med.id!, _selectedDate);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("${med.name} marked as taken."),
+        content: Text("${med.name} has been taken"),
         backgroundColor: Colors.green,
       ),
     );
     
-    _loadMedicines(); // This re-fetches and re-filters
+    _loadMedicines();
   }
 
-  // --- ADDED NEW FUNCTION ---
   Future<void> _markAsUntaken(Medicine med) async {
     if (med.id == null) return;
     
-    // Set the last taken date to null
     await _db.updateMedicineLastTaken(med.id!, null);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("${med.name} marked as not taken."),
+        content: Text("${med.name} hasn't been taken"),
         backgroundColor: Colors.blueGrey,
       ),
     );
     
     _loadMedicines();
   }
-  // --- END OF NEW FUNCTION ---
 
   Future<void> _deleteMedicine(Medicine med) async {
     if (med.id == null) return;
@@ -154,7 +136,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("${med.name} has been removed."),
+        content: Text("${med.name} has been removed"),
         backgroundColor: Colors.red,
       ),
     );
@@ -166,18 +148,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Remove Medicine?'),
+          title: const Text('Remove Medicine?', style: TextStyle(fontWeight: FontWeight.bold),),
           content: Text('Are you sure you want to remove ${med.name}?'),
           actions: [
             TextButton(
-              child: const Text('Cancel'),
+              child: const Text('No'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Remove'),
+              child: const Text('Yes'),
               onPressed: () {
                 _deleteMedicine(med);
                 Navigator.of(context).pop();
@@ -219,7 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: FloatingActionButton(
           backgroundColor: const Color(0xFF007AFF),
           shape: const CircleBorder(),
-          elevation: 0,
+          elevation: 1,
           highlightElevation: 0,
           focusElevation: 0,
           hoverElevation: 0,
@@ -243,7 +225,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: EdgeInsets.symmetric(vertical: 50.0),
         child: Text(
           "No scheduled medications for this day.",
-          style: TextStyle(fontSize: 18, color: Colors.grey),
+          style: TextStyle(fontSize: 18, color: Color(0xFF007AFF)),
         ),
       ),
     );
@@ -298,7 +280,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _dateSelector() {
-    // These dates are now final and based on the *actual* current time
     final DateTime today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
     final DateTime yesterday = today.subtract(const Duration(days: 1));
     final DateTime tomorrow = today.add(const Duration(days: 1));
@@ -306,7 +287,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Yesterday Chip
         GestureDetector(
           onTap: () => setState(() {
             _selectedDate = yesterday;
@@ -320,7 +300,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(width: 10),
         
-        // Today Chip
         GestureDetector(
           onTap: () => setState(() {
             _selectedDate = today;
@@ -334,7 +313,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(width: 10),
         
-        // Tomorrow Chip
         GestureDetector(
           onTap: () => setState(() {
             _selectedDate = tomorrow;
@@ -362,7 +340,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: isSelected ? const Color(0xFF007AFF) : Colors.grey[300],
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
       ),
       child: Column(
         children: [
@@ -395,7 +373,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Center(
           child: Text(
             isTakenList ? "No medicines taken yet." : "No medicines scheduled.",
-            style: const TextStyle(color: Colors.grey, fontSize: 16),
+            style: const TextStyle(color: Color(0xFF007AFF), fontSize: 16),
           ),
         ),
       );
@@ -469,15 +447,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Text(time),
             ),
             
-            // --- UPDATED BUTTON LOGIC ---
             if (!isTakenList)
-              // Show "Take" button
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: TextButton(
                   onPressed: () => _markAsTaken(med),
                   style: TextButton.styleFrom(
-                    backgroundColor: Color(0xFF007AFF).withOpacity(0.1),
+                    backgroundColor: Color(0xFF007AFF),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -485,13 +461,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: const Text(
                     "Take",
                     style: TextStyle(
-                        color: Color(0xFF007AFF), fontWeight: FontWeight.bold),
+                        color: Color.fromARGB(255, 255, 255, 255), fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
             
             if (isTakenList)
-              // Show "Undo" button
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: TextButton(
@@ -505,11 +480,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: const Text(
                     "Undo",
                     style: TextStyle(
-                        color: Colors.grey, fontWeight: FontWeight.bold),
+                        color: Color.fromARGB(255, 0, 0, 0), fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-            // --- END OF BUTTON LOGIC ---
           ],
         ),
       ),

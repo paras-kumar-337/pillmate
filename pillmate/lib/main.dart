@@ -75,8 +75,8 @@ class SplashScreen extends StatelessWidget {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 0, 115, 255).withOpacity(0.8),
-                      foregroundColor: Colors.white,
+                      backgroundColor: const Color.fromARGB(255, 0, 155, 65).withOpacity(0.8),
+                      foregroundColor: const Color.fromARGB(255, 255, 255, 255),
                       elevation: 2,
                       padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15)
                     ),
@@ -91,8 +91,8 @@ class SplashScreen extends StatelessWidget {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey[400]!.withOpacity(0.4),
-                      foregroundColor: Colors.white,
+                      backgroundColor: const Color.fromARGB(255, 227, 227, 227),
+                      foregroundColor: Color.fromARGB(255, 0, 0, 0),
                       elevation: 2,
                       padding: EdgeInsets.symmetric(horizontal: 45, vertical: 15),
                     ),

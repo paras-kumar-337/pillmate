@@ -16,8 +16,6 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final AuthService _auth = AuthService();
 
-
-  // Controllers for dynamic data
   late TextEditingController nameController;
   late TextEditingController emailController;
   late TextEditingController passwordController;
@@ -57,7 +55,7 @@ class _ProfilePageState extends State<ProfilePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Logged Out!"),
-        backgroundColor: Colors.blueGrey, // You can use any color
+        backgroundColor: Colors.blueGrey,
       ),
     );
 
@@ -65,16 +63,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _handleUpdate() async {
-    if (emailController.text != _userEmail) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Email cannot be changed."),
-          backgroundColor: Colors.red,
-        ),
-      );
-      emailController.text = _userEmail;
-      return;
-    }
 
     setState(() {
       _isUpdating = true;
@@ -156,7 +144,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _inputField(nameController),
               const SizedBox(height: 20),
               const Text("Email (Cannot be changed)", style: _labelStyle),
-              _inputField(emailController),
+              _inputField(emailController, enabled: false),
               const SizedBox(height: 20),
               const Text("New Password", style: _labelStyle),
               _inputField(passwordController, isPassword: true),
@@ -183,15 +171,17 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _inputField(
     TextEditingController controller, {
     bool isPassword = false,
+    bool enabled = true,
   }) {
     return TextField(
       controller: controller,
       obscureText: isPassword,
+      enabled: enabled,
       decoration: InputDecoration(
-        suffixIcon: IconButton(
+        suffixIcon: enabled ? IconButton(
           icon: const Icon(Icons.close, size: 18),
           onPressed: () => controller.clear(),
-        ),
+        ) : const Icon(Icons.lock, size: 18, color: Colors.grey),
       ),
     );
   }

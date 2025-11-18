@@ -93,12 +93,28 @@ class _SignupFormState extends State<SignupForm> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController answerController = TextEditingController();
+
+  String? _selectedQuestion;
+  final List<String> _securityQuestions = [
+    'What is your mother\'s name?',
+    'What was the name of your first pet?',
+    'What is your city of birth?',
+  ];
 
   bool _isObscured = true;
   bool loading = false;
 
   void _signUp() async {
-    if (!_formkey.currentState!.validate()) return;
+    if (_selectedQuestion == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select a security question."),
+          backgroundColor: Colors.red,
+        )
+      );
+      return;
+    }
 
     setState(() => loading = true);
 
@@ -106,6 +122,8 @@ class _SignupFormState extends State<SignupForm> {
       nameController.text.trim(),
       emailController.text.trim(),
       passwordController.text.trim(),
+      _selectedQuestion!,
+      answerController.text.trim(),
     );
 
     setState(() => loading = false);
@@ -198,17 +216,69 @@ class _SignupFormState extends State<SignupForm> {
             ),
           ),
 
+          const SizedBox(height: 20),
+          const Text(
+            "Security Question",
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: DropdownButtonFormField<String>(
+              value: _selectedQuestion,
+              items: _securityQuestions.map((String question) {
+                return DropdownMenuItem<String>(
+                  value: question,
+                  child: Text(question, style: const TextStyle(color: Colors.black)),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedQuestion = newValue;
+                });
+              },
+              hint: const Text("Select a question", style: TextStyle(color: Colors.black54)),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+              ),
+              dropdownColor: Colors.white,
+              style: const TextStyle(color: Colors.black),
+              validator: (v) => v == null ? 'Please select a question' : null,
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          const Text(
+            "Your Answer",
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          TextFormField(
+            controller: answerController,
+            style: const TextStyle(color: Colors.white),
+            validator: (v) => v!.isEmpty ? "Please answer your question" : null,
+            decoration: const InputDecoration(
+              hintText: "Your answer (e.g., 'Dell' or 'Buddy')",
+              hintStyle: TextStyle(color: Colors.white54)
+            ),
+          ),
+
           SizedBox(height: 50),
           Center(
             child: ElevatedButton(
               onPressed: loading ? null : _signUp,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(
-                  255,
-                  0,
-                  115,
-                  255,
-                ).withOpacity(0.8),
+                backgroundColor: const Color.fromARGB(255, 0, 155, 65).withOpacity(0.8),
                 foregroundColor: Colors.white,
                 elevation: 2,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
@@ -238,8 +308,8 @@ class _SignupFormState extends State<SignupForm> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey[400]!.withOpacity(0.4),
-                      foregroundColor: Colors.white,
+                      backgroundColor: const Color.fromARGB(255, 227, 227, 227),
+                      foregroundColor: Color.fromARGB(255, 0, 0, 0),
                       elevation: 2,
                       padding: EdgeInsets.symmetric(horizontal: 25, vertical: 10),
                     ),

@@ -17,20 +17,21 @@ class DBHelper {
     return await databaseFactory.openDatabase(
       path,
       options: OpenDatabaseOptions(
-        // --- 1. BUMPED VERSION TO 5 ---
-        version: 5,
+        version: 6,
         onCreate: (db, version) async {
-          // Users table
+          // users table
           await db.execute("""
           CREATE TABLE users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
             email TEXT UNIQUE,
-            password TEXT
+            password TEXT,
+            security_question TEXT,
+            security_answer TEXT
           )
           """);
-          
-          // Medicines table (for fresh installs)
+
+          // medicines table
           await db.execute("""
           CREATE TABLE medicines (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,9 +51,7 @@ class DBHelper {
           """);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
-          // --- 2. ADDED UPGRADE LOGIC ---
           if (oldVersion < 5) {
-            // This is the fix for users who already have the app
             await db.execute("""
             CREATE TABLE IF NOT EXISTS medicines (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,12 +70,14 @@ class DBHelper {
               lastTakenDate TEXT 
             )
             """);
-            
-            // We try to add the column.
-             try {
-              await db.execute("ALTER TABLE medicines ADD COLUMN lastTakenDate TEXT");
+          }
+
+          if (oldVersion < 6) {
+            try {
+              await db.execute("ALTER TABLE users ADD COLUMN security_question TEXT");
+              await db.execute("ALTER TABLE users ADD COLUMN security_answer TEXT");
             } catch (e) {
-              print("Could not add lastTakenDate column, might exist: $e");
+              print("Error adding security columns: $e");
             }
           }
         },
@@ -84,19 +85,27 @@ class DBHelper {
     );
   }
 
-  // --- User Functions (Unchanged) ---
-  Future<int> insertUser(String name, String email, String password) async {
+  // user functions
+  Future<int> insertUser(String name, String email, String password, String question, String answer) async {
     final dbClient = await db;
-    try{
-    return await dbClient.insert(
-      "users",
-      {"name": name, "email": email, "password": password},
-      conflictAlgorithm: ConflictAlgorithm.abort,
-    );} catch(e){
+    try {
+      return await dbClient.insert(
+        "users",
+        {
+          "name": name,
+          "email": email,
+          "password": password,
+          "security_question": question,
+          "security_answer": answer.trim().toLowerCase()
+        },
+        conflictAlgorithm: ConflictAlgorithm.abort,
+      );
+    } catch (e) {
       print("Insert User Error: $e");
       rethrow;
     }
   }
+
   Future<Map<String, dynamic>?> getUser(String email, String password) async {
     final dbClient = await db;
     final result = await dbClient.query(
@@ -106,20 +115,25 @@ class DBHelper {
     );
     return result.isNotEmpty ? result.first : null;
   }
+
   Future<int> updateUser(String email, String newName, String? newPassword) async {
     final dbClient = await db;
-    final data = {'name': newName,};
+    final data = {'name': newName};
     if (newPassword != null && newPassword.isNotEmpty) {
       data['password'] = newPassword;
     }
-    return await dbClient.update("users", data, where: "email = ?", whereArgs: [email],);
+    return await dbClient.update(
+      "users",
+      data,
+      where: "email = ?",
+      whereArgs: [email],
+    );
   }
 
-  // --- Medicine Functions (Updated) ---
-
+  // medicine functions
   Future<int> insertMedicine(Map<String, dynamic> data) async {
     final dbClient = await db;
-    data.remove('id'); 
+    data.remove('id');
     return await dbClient.insert(
       "medicines",
       data,
@@ -132,8 +146,6 @@ class DBHelper {
     return await dbClient.query("medicines");
   }
 
-  // --- 3. RENAMED AND UPDATED THIS FUNCTION ---
-  // It now stores the specific date, or null
   Future<int> updateMedicineLastTaken(int id, DateTime? date) async {
     final dbClient = await db;
     return await dbClient.update(
@@ -150,6 +162,27 @@ class DBHelper {
       "medicines",
       where: "id = ?",
       whereArgs: [id],
+    );
+  }
+
+  Future<Map<String, dynamic>?> getUserByEmail(String email) async {
+    final dbClient = await db;
+    final result = await dbClient.query(
+      "users",
+      where: "email = ?",
+      whereArgs: [email],
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
+
+  // reset password
+  Future<int> resetPassword(String email, String newPassword) async {
+    final dbClient = await db;
+    return await dbClient.update(
+      "users",
+      {"password": newPassword},
+      where: "email = ?",
+      whereArgs: [email],
     );
   }
 }

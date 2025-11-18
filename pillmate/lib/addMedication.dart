@@ -4,10 +4,8 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../database/db_helper.dart';
 import '../services/notification_service.dart';
-// Import dashboard to get the route name
 import 'dashboard.dart';
 
-// Medicine Model (with toIso8601String fix)
 class Medicine {
   int? id;
   String name;
@@ -47,10 +45,8 @@ class Medicine {
         'imagePath': imagePath,
         'schedule': schedule,
         'dosageFrequency': dosageFrequency,
-        // Corrected typo
         'startDate': startDate?.toIso8601String(),
         'startTime': startTime != null ? '${startTime!.hour}:${startTime!.minute}' : null,
-        // Corrected typo
         'endDate': endDate?.toIso8601String(),
         'endTime': endTime != null ? '${endTime!.hour}:${endTime!.minute}' : null,
         'reminders': reminders ? 1 : 0,
@@ -93,7 +89,6 @@ class PopularMedicine {
   PopularMedicine({required this.name, required this.type, required this.strength});
 }
 
-/// ENTRY POINT WIDGET
 class AddMedicationStart extends StatelessWidget {
   const AddMedicationStart({super.key});
 
@@ -103,7 +98,6 @@ class AddMedicationStart extends StatelessWidget {
   }
 }
 
-/// Page 1: (Search + Overflow Fix)
 class AddMedPage1 extends StatefulWidget {
   final Medicine medicine;
   const AddMedPage1({super.key, required this.medicine});
@@ -186,7 +180,6 @@ class _AddMedPage1State extends State<AddMedPage1> {
   
                   IconButton(
                     icon: const Icon(Icons.close, size: 28, color: Colors.black),
-                    // --- FIX 1 (Navigation) ---
                     onPressed: () => Navigator.popUntil(
                         context, ModalRoute.withName(DashboardScreen.routeName)),
                   ),
@@ -198,11 +191,11 @@ class _AddMedPage1State extends State<AddMedPage1> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(30),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.search, color: Colors.grey),
+                    const Icon(Icons.search, color: Color(0xFF007AFF)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
@@ -249,7 +242,6 @@ class _AddMedPage1State extends State<AddMedPage1> {
                             ),
                           ],
                         ),
-                        // --- FIX 2 (Overflow) ---
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
@@ -261,7 +253,7 @@ class _AddMedPage1State extends State<AddMedPage1> {
                                 med.name,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16, // Font size can be larger now
+                                  fontSize: 16, 
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -276,7 +268,6 @@ class _AddMedPage1State extends State<AddMedPage1> {
                             ],
                           ),
                         ),
-                        // --- END OF FIX 2 ---
                       ),
                     );
                   },
@@ -295,18 +286,18 @@ class _AddMedPage1State extends State<AddMedPage1> {
                     );
                   },
                   style: TextButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: Color(0xFF007AFF),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 18,
                       vertical: 10,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(25),
                     ),
                   ),
                   child: const Text(
                     'Add Custom Medicine',
-                    style: TextStyle(color: Color(0xFF007AFF)),
+                    style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                 ),
               ),
@@ -320,7 +311,6 @@ class _AddMedPage1State extends State<AddMedPage1> {
   }
 }
 
-/// Page 2: Keyboard Overflow Fix
 class AddMedPage2 extends StatefulWidget {
   final Medicine medicine;
   const AddMedPage2({super.key, required this.medicine});
@@ -351,11 +341,10 @@ class _AddMedPage2State extends State<AddMedPage2> {
   }
 
   void _next() {
-    // Added validation
     if (_nameCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter a medicine name.'),
+          content: Text('Please enter a medicine name'),
           backgroundColor: Colors.red,
         ),
       );
@@ -381,18 +370,15 @@ class _AddMedPage2State extends State<AddMedPage2> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          // --- FIX 3 (Keyboard Overflow) ---
-          // Wrapped Column in SingleChildScrollView
           child: SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                // Ensure the content can be at least as tall as the screen
                 minHeight: MediaQuery.of(context).size.height -
-                    (MediaQuery.of(context).padding.vertical + 36), // 18*2 padding
+                    (MediaQuery.of(context).padding.vertical + 36), 
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Use this
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, 
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,7 +392,6 @@ class _AddMedPage2State extends State<AddMedPage2> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.close, size: 28, color: Colors.black),
-                            // --- FIX 1 (Navigation) ---
                             onPressed: () => Navigator.popUntil(
                                 context, ModalRoute.withName(DashboardScreen.routeName)),
                           ),
@@ -423,7 +408,7 @@ class _AddMedPage2State extends State<AddMedPage2> {
                         decoration: InputDecoration(
                           hintText: 'Paracetamol',
                           suffixIcon: IconButton(
-                            icon: const Icon(Icons.clear),
+                            icon: const Icon(Icons.clear, color: Color(0xFF007AFF)),
                             onPressed: () => _nameCtrl.clear(),
                           ),
                         ),
@@ -461,25 +446,24 @@ class _AddMedPage2State extends State<AddMedPage2> {
                     ],
                   ),
                   
-                  // Replaced Spacer with Padding
                   Padding(
                     padding: const EdgeInsets.only(top: 24.0, bottom: 12.0),
                     child: Center(
                       child: TextButton(
                         onPressed: _next,
                         style: TextButton.styleFrom(
-                          backgroundColor: Colors.grey[200],
+                          backgroundColor: Color(0xFF007AFF),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 18,
                             vertical: 10,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(25),
                           ),
                         ),
                         child: const Text(
                           'Next',
-                          style: TextStyle(color: Color(0xFF007AFF)),
+                          style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                         ),
                       ),
                     ),
@@ -488,7 +472,6 @@ class _AddMedPage2State extends State<AddMedPage2> {
               ),
             ),
           ),
-          // --- END OF FIX 3 ---
         ),
       ),
       bottomNavigationBar: _simpleBottomNav(context),
@@ -496,7 +479,6 @@ class _AddMedPage2State extends State<AddMedPage2> {
   }
 }
 
-/// Page 3: Removed 'Choose Recents'
 class AddMedPage3 extends StatefulWidget {
   final Medicine medicine;
   const AddMedPage3({super.key, required this.medicine});
@@ -541,7 +523,6 @@ class _AddMedPage3State extends State<AddMedPage3> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, size: 28, color: Colors.black),
-                    // --- FIX 1 (Navigation) ---
                     onPressed: () => Navigator.popUntil(
                         context, ModalRoute.withName(DashboardScreen.routeName)),
                   ),
@@ -552,7 +533,7 @@ class _AddMedPage3State extends State<AddMedPage3> {
                 'Choose Look',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 150),
               Center(
                 child: Container(
                   height: 120,
@@ -587,11 +568,9 @@ class _AddMedPage3State extends State<AddMedPage3> {
                       onPressed: _pickImage,
                       child: const Text(
                         'Choose from Gallery',
-                        style: TextStyle(color: Color(0xFF007AFF)),
+                        style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.bold),
                       ),
                     ),
-                    // --- FIX 4 (Removed Button) ---
-                    // 'Choose Recents' button removed
                   ],
                 ),
               ),
@@ -607,18 +586,18 @@ class _AddMedPage3State extends State<AddMedPage3> {
                     );
                   },
                   style: TextButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: Color(0xFF007AFF),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 18,
                       vertical: 10,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(25),
                     ),
                   ),
                   child: const Text(
                     'Next',
-                    style: TextStyle(color: Color(0xFF007AFF)),
+                    style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                 ),
               ),
@@ -631,7 +610,6 @@ class _AddMedPage3State extends State<AddMedPage3> {
   }
 }
 
-/// Page 4: (Navigation Fix)
 class AddMedPage4 extends StatefulWidget {
   final Medicine medicine;
   const AddMedPage4({super.key, required this.medicine});
@@ -706,7 +684,7 @@ class _AddMedPage4State extends State<AddMedPage4> {
     if (_reminders && widget.medicine.startTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please set a Start time for the reminder.'),
+          content: Text('Please set a start time for the reminder'),
           backgroundColor: Colors.red,
         ),
       );
@@ -757,7 +735,6 @@ class _AddMedPage4State extends State<AddMedPage4> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, size: 28, color: Colors.black),
-                    // --- FIX 1 (Navigation) ---
                     onPressed: () => Navigator.popUntil(
                         context, ModalRoute.withName(DashboardScreen.routeName)),
                   ),
@@ -806,8 +783,8 @@ class _AddMedPage4State extends State<AddMedPage4> {
                   ElevatedButton(
                     onPressed: _pickStartDate,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[200],
-                      foregroundColor: Colors.black,
+                      backgroundColor: Color(0xFF007AFF),
+                      foregroundColor: const Color.fromARGB(255, 255, 255, 255),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -825,8 +802,8 @@ class _AddMedPage4State extends State<AddMedPage4> {
                   ElevatedButton(
                     onPressed: _pickEndDate,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[200],
-                      foregroundColor: Colors.black,
+                      backgroundColor: Color(0xFF007AFF),
+                      foregroundColor: const Color.fromARGB(255, 255, 255, 255),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -866,18 +843,18 @@ class _AddMedPage4State extends State<AddMedPage4> {
                 child: TextButton(
                   onPressed: _next,
                   style: TextButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: Color(0xFF007AFF),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 18,
                       vertical: 10,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(25),
                     ),
                   ),
                   child: const Text(
                     'Next',
-                    style: TextStyle(color: Color(0xFF007AFF)),
+                    style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                 ),
               ),
@@ -890,7 +867,6 @@ class _AddMedPage4State extends State<AddMedPage4> {
   }
 }
 
-/// Page 5: (Navigation Fix)
 class AddMedPage5 extends StatefulWidget {
   final Medicine medicine;
   const AddMedPage5({super.key, required this.medicine});
@@ -920,7 +896,6 @@ class _AddMedPage5State extends State<AddMedPage5> {
       ),
     );
 
-    // --- FIX 1 (Navigation) ---
     Navigator.popUntil(
         context, ModalRoute.withName(DashboardScreen.routeName));
   }
@@ -944,7 +919,6 @@ class _AddMedPage5State extends State<AddMedPage5> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, size: 28, color: Colors.black),
-                    // --- FIX 1 (Navigation) ---
                     onPressed: () => Navigator.popUntil(
                         context, ModalRoute.withName(DashboardScreen.routeName)),
                   ),
@@ -1005,7 +979,7 @@ class _AddMedPage5State extends State<AddMedPage5> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 30),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _saveMedicine,
                       style: ElevatedButton.styleFrom(
@@ -1016,7 +990,7 @@ class _AddMedPage5State extends State<AddMedPage5> {
                           vertical: 12,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(25),
                         ),
                       ),
                       child: _isLoading
@@ -1061,7 +1035,6 @@ class _AddMedPage5State extends State<AddMedPage5> {
   }
 }
 
-/// Common bottom nav (Navigation fix)
 Widget _simpleBottomNav(BuildContext context) {
   return Container(
     margin: const EdgeInsets.symmetric(horizontal: 60, vertical: 10),
@@ -1077,7 +1050,6 @@ Widget _simpleBottomNav(BuildContext context) {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         GestureDetector(
-          // --- FIX 1 (Navigation) ---
           onTap: () => Navigator.popUntil(
               context, ModalRoute.withName(DashboardScreen.routeName)),
           child: Column(
